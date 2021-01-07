@@ -6,12 +6,17 @@ $cropImages = new \cropImages();
 
 // return link img
 // $cropImages->cropImages(<image link : string>, <link directory cashe with directory pict : string>, <size : array|int>, <quality : int>);
-$imgBackC = $cropImages->cropImages($imgBack, '/cache/image-header', 200, 80);
-$imgBackS = $cropImages->cropImages($imgBack, '/cache/image-header', 200, 80, 'square');
-$imgBackW = $cropImages->cropImages($imgBack, '/cache/image-header', 200, 80, 'width');
-$imgBackH = $cropImages->cropImages($imgBack, '/cache/image-header', 200, 80, 'height');
-$arrImgBack = $cropImages->cropImages($imgBack, '/cache/image-header', array(), 80, 'maxheight', 850);
 
-// return arr`s link`s img array('Resize' => 'Link')
-$arrImgBack = $cropImages->cropImages($imgBack, '/cache/image-header', array('4800', '1920', '1200', '800', '600'), 80, 'height');
+// crop default of proportional max-width
+$imgBackC = $cropImages->cropImages($imgBack, '/cache/image-header', 200, 80);
+// crop square after crop to max-width
+$imgBackS = $cropImages->cropImages($imgBack, '/cache/image-header', 200, 80, 'square');
+// crop width no resize height
+$imgBackW = $cropImages->cropImages($imgBack, '/cache/image-header', 200, 80, 'width');
+// crop height no resize width
+$imgBackH = $cropImages->cropImages($imgBack, '/cache/image-header', 200, 80, 'height');
+// crop width set and maxheight set
+$arrImgBack = $cropImages->cropImages($imgBack, '/cache/image-header', array(), 80, 'maxheight', 850);
 ```
+
+return LINK or array 'Resize' => 'Link'
