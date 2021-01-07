@@ -5,6 +5,7 @@ require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/cropImages.php');
 $cropImages = new \cropImages();
 
 // return link img
+// $cropImages->cropImages(<image link : string>, <link directory cashe with directory pict : string>, <size : array|int>, <quality : int>);
 $imgBackC = $cropImages->cropImages($imgBack, '/cache/image-header', 200, 80);
 $imgBackS = $cropImages->cropImages($imgBack, '/cache/image-header', 200, 80, 'square');
 $imgBackW = $cropImages->cropImages($imgBack, '/cache/image-header', 200, 80, 'width');
