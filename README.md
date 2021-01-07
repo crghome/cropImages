@@ -1,4 +1,6 @@
 # cropImages
+---
+```php
 require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/cropImages.php');
 $cropImages = new \cropImages();
 
@@ -11,3 +13,4 @@ $arrImgBack = $cropImages->cropImages($imgBack, '/cache/image-header', array(), 
 
 // return arr`s link`s img array('Resize' => 'Link')
 $arrImgBack = $cropImages->cropImages($imgBack, '/cache/image-header', array('4800', '1920', '1200', '800', '600'), 80, 'height');
+```
