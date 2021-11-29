@@ -16,7 +16,7 @@ $arrImgBack = $cropImages->cropImages($imgBack, '/cache/image-header', array(), 
 $arrImgBack = $cropImages->cropImages($imgBack, '/cache/image-header', array('4800', '1920', '1200', '800', '600'), 80, 'height');
 */
 
-class cropImages{
+class CropImages{
     private $typeImg = array(1 => 'gif', 2 => 'jpeg', 3 => 'png');
     private $typeImgAll = array(0=>'UNKNOWN',1=>'GIF',2=>'JPEG',3=>'PNG',4=>'SWF',5=>'PSD',6=>'BMP',7=>'TIFF_II',8=>'TIFF_MM',9=>'JPC',10=>'JP2',11=>'JPX',12=>'JB2',13=>'SWC',14=>'IFF',15=>'WBMP',16=>'XBM',17=>'ICO',18=>'COUNT');
     private $imageInit = array(
@@ -56,33 +56,35 @@ class cropImages{
         $imageFilePathAbs_normal = $dirAbs . '/' . $newImgName;
         
         // rotate
-        $image = imagecreatefromjpeg($imageFilePathAbs);
-        $exif = exif_read_data($imageFilePathAbs);
-        if(isset($exif['Orientation']) && !empty($exif['Orientation']) && in_array($exif['Orientation'], array(3,6,8)) && $fileName['type'] == 'jpg'){
-            if(!file_exists($imageFilePathAbs_normal)){
-                switch ($exif['Orientation']) {
-                    // Поворот на 180 градусов
-                    case 3: {
-                        $result = imagerotate($image,180,0);
-                        break;
+        if($fileName['type'] == 'jpg'){
+            $image = imagecreatefromjpeg($imageFilePathAbs);
+            $exif = exif_read_data($imageFilePathAbs, '');
+            if(isset($exif['Orientation']) && !empty($exif['Orientation']) && in_array($exif['Orientation'], array(3,6,8)) && $fileName['type'] == 'jpg'){
+                if(!file_exists($imageFilePathAbs_normal)){
+                    switch ($exif['Orientation']) {
+                        // Поворот на 180 градусов
+                        case 3: {
+                            $result = imagerotate($image,180,0);
+                            break;
+                        }
+                        // Поворот вправо на 90 градусов
+                        case 6: {
+                            $result = imagerotate($image,-90,0);
+                            break;
+                        }
+                        // Поворот влево на 90 градусов
+                        case 8: {
+                            $result = imagerotate($image,90,0);
+                            break;
+                        }
                     }
-                    // Поворот вправо на 90 градусов
-                    case 6: {
-                        $result = imagerotate($image,-90,0);
-                        break;
-                    }
-                    // Поворот влево на 90 градусов
-                    case 8: {
-                        $result = imagerotate($image,90,0);
-                        break;
-                    }
+                    //echo $imageFilePathAbs_normal . '<br>';
+                    //copy($imageFilePathAbs_normal, $result);
+                    imagejpeg($result, $imageFilePathAbs_normal);
+                    $result = $imageFilePath_normal;
+                } else {
+                    $result = $imageFilePath_normal;
                 }
-                //echo $imageFilePathAbs_normal . '<br>';
-                //copy($imageFilePathAbs_normal, $result);
-                imagejpeg($result, $imageFilePathAbs_normal);
-                $result = $imageFilePath_normal;
-            } else {
-                $result = $imageFilePath_normal;
             }
         }
         return $result;
@@ -272,7 +274,6 @@ class cropImages{
         return $result;
     }
 }
-
 
 
 
