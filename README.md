@@ -1,22 +1,27 @@
 # cropImages
+## V.3.0.0
 ---
 ```php
-require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/cropImages.php');
-$cropImages = new \cropImages();
+require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/CropImages.php');
+$cropImages = new \CropImages();
 
-// return link img
-// $cropImages->cropImages(<image link : string>, <link directory cashe with directory pict : string>, <size : array|int>, <quality : int>);
+$imgCache = $cropImages->cropImages(
+    String $imagePath,              // original path image
+    String|Array $createWidth,      // size new
+    Int $quality = 0,               // quality, default 90
+    String $dirCache = '',          // directory cache, default by directory in cache original
+    String $figure = 'cover',       // set figure, default proportional by size width, height|width|cropMinHeight
+    Int $height = 0,                // set height if figure cropMinHeight
+    Bool $originExt = false         // if need original extension file, default webp format
+)
 
-// crop default of proportional max-width
-$imgBackC = $cropImages->cropImages($imgBack, '/cache/image-header', 200, 80);
-// crop square after crop to max-width
-$imgBackS = $cropImages->cropImages($imgBack, '/cache/image-header', 200, 80, 'square');
-// crop width no resize height
-$imgBackW = $cropImages->cropImages($imgBack, '/cache/image-header', 200, 80, 'width');
-// crop height no resize width
-$imgBackH = $cropImages->cropImages($imgBack, '/cache/image-header', 200, 80, 'height');
-// crop width set and maxheight set
-$arrImgBack = $cropImages->cropImages($imgBack, '/cache/image-header', array(), 80, 'maxheight', 850);
+// examples
+$imgCache = $cropImages->cropImages(imagePath: $image, createWidth: 800);
+$imgCache = $cropImages->cropImages(imagePath: $image, createWidth: 800, figure: 'width');
+$imgCache = $cropImages->cropImages(imagePath: $image, createWidth: 800, figure: 'height');
+$imgCache = $cropImages->cropImages(imagePath: $image, createWidth: 800, figure: 'cropMinHeight', height: 600);
+
+$arrImgCache = $cropImages->cropImages(imagePath: $image, createWidth: ['4800', '1920', '1200', '800', '600']);
 ```
 
 return LINK or array 'Resize' => 'Link'
