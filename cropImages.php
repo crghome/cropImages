@@ -244,7 +244,8 @@ class CropImages{
      * @param String $figure set cover|height|width
      */
     private function cropWidthImage(String $aNewImageFilePath, Int $size, String $figure = 'cover'){
-        if($size <= $this->imageInit['imageWidth']){
+        if($size < $this->imageInit['imageWidth']) $size = $this->imageInit['imageWidth'];
+        // if($size <= $this->imageInit['imageWidth']){
             // initialize crop data
             $cropData = array(
                 'newWidth' => $size,
@@ -271,9 +272,9 @@ class CropImages{
                 $cropData['newHeight'] = floor($cropData['newWidth'] * $kWidth);
             }
             $this->cropping(aNewImageFilePath: $aNewImageFilePath, startX: $cropData['src_x'], startY: $cropData['src_y'], newWidth: $cropData['newWidth'], newHeight: $cropData['newHeight'], oldWidth: $cropData['oldWidth'], oldHeight: $cropData['oldHeight']);
-        } else {
-            copy($this->imageInit['imageFilePathAbs'], $aNewImageFilePath);
-        }
+        // } else {
+        //     copy($this->imageInit['imageFilePathAbs'], $aNewImageFilePath);
+        // }
     }
 
     private function transitionHeightImage(String $nameImg, Int $newHeight){
@@ -285,7 +286,8 @@ class CropImages{
             // dump($pathImgAbs);
             // echo '<pre>'; var_dump('file transition path ' . (file_exists($pathImgAbs)?'exist':'no')); echo '</pre>';
             if(!file_exists($pathImgAbs)){
-                if($newHeight <= $this->imageInit['imageHeight']){
+                if($newHeight < $this->imageInit['imageHeight']) $newHeight = $this->imageInit['imageHeight'];
+                // if($newHeight <= $this->imageInit['imageHeight']){
                     // initialize crop data
                     $cropData = array(
                         'newWidth' => $this->imageInit['imageWidth'],
@@ -299,10 +301,10 @@ class CropImages{
                     $cropData['newWidth'] = floor($cropData['newWidth'] / $kHeight);
                     // echo '<pre>'; var_dump($cropData); echo '</pre>';
                     $this->cropping(aNewImageFilePath: $pathImgAbs, startX: $cropData['src_x'], startY: $cropData['src_y'], newWidth: $cropData['newWidth'], newHeight: $cropData['newHeight'], oldWidth: $cropData['oldWidth'], oldHeight: $cropData['oldHeight']);
-                } else {
-                    // echo '<pre>'; var_dump('copy transition ' . $pathImgAbs); echo '</pre>';
-                    copy($this->imageInit['imageFilePathAbs'], $pathImgAbs);
-                }
+                // } else {
+                //     // echo '<pre>'; var_dump('copy transition ' . $pathImgAbs); echo '</pre>';
+                //     copy($this->imageInit['imageFilePathAbs'], $pathImgAbs);
+                // }
             }
         } catch (\Exception $e) {
             //
@@ -319,7 +321,9 @@ class CropImages{
             // echo '<pre>'; var_dump('pathImg ' . $pathImg); echo '</pre>';
             // echo '<pre>'; var_dump('pathImgRec ' . $pathImgRec); echo '</pre>';
             if(!file_exists($pathImgRec)){
-                if($newWidth <= $this->imageInit['imageWidth'] || $minHeight < $this->imageInit['imageHeight']){
+                if($newWidth < $this->imageInit['imageWidth']) $newWidth = $this->imageInit['imageWidth'];
+                if($minHeight < $this->imageInit['imageHeight']) $minHeight = $this->imageInit['imageHeight'];
+                // if($newWidth <= $this->imageInit['imageWidth'] || $minHeight < $this->imageInit['imageHeight']){
                     $tmpImage = $this->transitionHeightImage(nameImg: $fullNameImg, newHeight: (int)$minHeight);
                     $tmpImageAbs = $this->documentRoot . $tmpImage;
                     // echo '<pre>'; var_dump('tmpImage ' . $tmpImage); echo '</pre>';
@@ -329,10 +333,10 @@ class CropImages{
                     // echo '<pre>'; var_dump('pathImgRec ' . $pathImgRec); echo '</pre>';
                     $pathImg = $cropImages->cropImages(imagePath: $tmpPathImage, dirCache: $this->imageInit['dirFilePath'], imageName: $fullNameImg, createWidth: $newWidth, figure: 'height', quality: $this->quality, originExt: $this->originExt);
                     // echo '<pre>'; var_dump($pathImg); echo '</pre>';
-                } else {
-                    // echo '<pre>'; var_dump('copy crop-min ' . $pathImgRec); echo '</pre>';
-                    copy($this->imageInit['imageFilePathAbs'], $pathImgRec);
-                }
+                // } else {
+                //     // echo '<pre>'; var_dump('copy crop-min ' . $pathImgRec); echo '</pre>';
+                //     copy($this->imageInit['imageFilePathAbs'], $pathImgRec);
+                // }
             }
         } catch (\Exception $e) {
             //
