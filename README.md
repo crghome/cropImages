@@ -1,5 +1,5 @@
 # cropImages
-## V.3.0.0
+## V.3.1.0
 ---
 ```php
 require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/CropImages.php');
