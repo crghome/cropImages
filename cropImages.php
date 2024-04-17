@@ -1,6 +1,6 @@
 <?php
 /* README
-VERSION 3.0.0
+VERSION 3.1.2
 
 require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/CropImages.php');
 $cropImages = new \CropImages();
@@ -23,13 +23,13 @@ $imgCache = $cropImages->cropImages(imagePath: $image, createWidth: 800, figure:
 
 $arrImgCache = $cropImages->cropImages(imagePath: $image, createWidth: ['4800', '1920', '1200', '800', '600']);
 */
-// namespace App\Helpers;
+namespace App\Helpers;
 
 class CropImages{
     private $documentRoot;
     private $cacheBase = '/cache';
     private $directoryCache;
-    private $quality = 90;
+    private $quality = 86;
     private $originExt = false;
     private $defaultExt = 'webp';
     private $typeImg = array(1 => 'gif', 2 => 'jpeg', 3 => 'png', 18 => 'webp');
@@ -244,7 +244,7 @@ class CropImages{
      * @param String $figure set cover|height|width
      */
     private function cropWidthImage(String $aNewImageFilePath, Int $size, String $figure = 'cover'){
-        if($size < $this->imageInit['imageWidth']) $size = $this->imageInit['imageWidth'];
+        if($size > $this->imageInit['imageWidth']) $size = $this->imageInit['imageWidth'];
         // if($size <= $this->imageInit['imageWidth']){
             // initialize crop data
             $cropData = array(
@@ -286,7 +286,7 @@ class CropImages{
             // dump($pathImgAbs);
             // echo '<pre>'; var_dump('file transition path ' . (file_exists($pathImgAbs)?'exist':'no')); echo '</pre>';
             if(!file_exists($pathImgAbs)){
-                if($newHeight < $this->imageInit['imageHeight']) $newHeight = $this->imageInit['imageHeight'];
+                if($newHeight > $this->imageInit['imageHeight']) $newHeight = $this->imageInit['imageHeight'];
                 // if($newHeight <= $this->imageInit['imageHeight']){
                     // initialize crop data
                     $cropData = array(
@@ -319,10 +319,11 @@ class CropImages{
         try{
             $pathImgRec = $this->imageNew['dirAbs'] . '/' . $fullNameImg;
             // echo '<pre>'; var_dump('pathImg ' . $pathImg); echo '</pre>';
-            // echo '<pre>'; var_dump('pathImgRec ' . $pathImgRec); echo '</pre>';
             if(!file_exists($pathImgRec)){
-                if($newWidth < $this->imageInit['imageWidth']) $newWidth = $this->imageInit['imageWidth'];
-                if($minHeight < $this->imageInit['imageHeight']) $minHeight = $this->imageInit['imageHeight'];
+                // echo '<pre>'; var_dump('newWidth ' . $newWidth); echo '</pre>';
+                // echo '<pre>'; var_dump('imageInit newWidth ' . $this->imageInit['imageWidth']); echo '</pre>';
+                if($newWidth > $this->imageInit['imageWidth']) $newWidth = $this->imageInit['imageWidth'];
+                if($minHeight > $this->imageInit['imageHeight']) $minHeight = $this->imageInit['imageHeight'];
                 // if($newWidth <= $this->imageInit['imageWidth'] || $minHeight < $this->imageInit['imageHeight']){
                     $tmpImage = $this->transitionHeightImage(nameImg: $fullNameImg, newHeight: (int)$minHeight);
                     $tmpImageAbs = $this->documentRoot . $tmpImage;
