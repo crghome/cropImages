@@ -1,6 +1,6 @@
 <?php
 /* README
-VERSION 3.1.2
+VERSION 3.1.3
 
 require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/CropImages.php');
 $cropImages = new \CropImages();
@@ -29,7 +29,7 @@ class CropImages{
     private $documentRoot;
     private $cacheBase = '/cache';
     private $directoryCache;
-    private $quality = 86;
+    private $quality = 92;
     private $originExt = false;
     private $defaultExt = 'webp';
     private $typeImg = array(1 => 'gif', 2 => 'jpeg', 3 => 'png', 18 => 'webp');
@@ -109,6 +109,9 @@ class CropImages{
             $funcImg($lNewImageDescriptor, $aNewImageFilePath, $this->quality);
             imagedestroy($lNewImageDescriptor);
             imagedestroy($lInitialImageDescriptor);
+        } catch (\Exception $e) {
+            copy($this->imageInit['imageFilePathAbs'], $aNewImageFilePath);
+            return $aNewImageFilePath;
         } catch (\Throwable $th) {
             copy($this->imageInit['imageFilePathAbs'], $aNewImageFilePath);
             return $aNewImageFilePath;
@@ -177,61 +180,49 @@ class CropImages{
     
 
     /**
-     * NOT release
+     * @return Object
      */
-    private function setNormalizedImageData($imageInitial){
-        $result = '';
+    private function setNormalizedImageData(){
+        $result = (object)['status' => false, 'error' => false];
         try{
-            $dirRoot = $this->cacheBase . '/tmp/img-normalized';
-            $dirRootAbs = $this->createDirectory($dirRoot);
-            $imageFilePath = preg_match('/^\/.+/', $imageInitial) ? preg_replace('/^\/(.+)?/', "$1", $imageInitial) : $imageInitial;
-            $imageFilePathAbs = $this->documentRoot . '/' . $imageFilePath;
-            $fileName = array(
-                'name' => preg_replace('/(.+)\..+/', "$1", preg_replace('/.*\/(.+)/', "$1", $imageFilePath)),
-                'type' => preg_replace('/.+\.(.+)/', "$1", preg_replace('/.*\/(.+)/', "$1", $imageFilePath)),
-            );
-            if(file_exists($imageFilePathAbs)){
-                $newImgName = filemtime($imageFilePathAbs) . preg_replace('/[\.\ \(\)\/\'\"]/', '', $imageFilePath) . '.' . $fileName['type'];
-                $imageFilePath_normal = $dirRoot . '/' . $newImgName;
-                $imageFilePathAbs_normal = $dirAbs . '/' . $newImgName;
-                
-                // rotate
-                // if($fileName['type'] == 'jpg'){
-                //     $image = imagecreatefromjpeg($imageFilePathAbs);
-                //     $exif = exif_read_data($imageFilePathAbs, '');
-                //     if(isset($exif['Orientation']) && !empty($exif['Orientation']) && in_array($exif['Orientation'], array(3,6,8)) && $fileName['type'] == 'jpg'){
-                //         if(!file_exists($imageFilePathAbs_normal)){
-                //             switch ($exif['Orientation']) {
-                //                 // Поворот на 180 градусов
-                //                 case 3: {
-                //                     $result = imagerotate($image,180,0);
-                //                     break;
-                //                 }
-                //                 // Поворот вправо на 90 градусов
-                //                 case 6: {
-                //                     $result = imagerotate($image,-90,0);
-                //                     break;
-                //                 }
-                //                 // Поворот влево на 90 градусов
-                //                 case 8: {
-                //                     $result = imagerotate($image,90,0);
-                //                     break;
-                //                 }
-                //             }
-                //             //echo $imageFilePathAbs_normal . '<br>';
-                //             //copy($imageFilePathAbs_normal, $result);
-                //             imagejpeg($result, $imageFilePathAbs_normal);
-                //             $result = $imageFilePath_normal;
-                //         } else {
-                //             $result = $imageFilePath_normal;
-                //         }
-                //     }
-                // }
+            // echo '<pre>'; var_dump($this->imageInit); echo '</pre>';
+            $exifReadData = exif_read_data($this->imageInit['imageFilePathAbs'], 'Orientation');
+            // echo '<pre>'; var_dump($exifReadData); echo '</pre>';
+            if($exifReadData && $exifReadData['Orientation']){
+                // echo '<pre>'; var_dump($exifReadData['Orientation']); echo '</pre>';
+                $lImageExtension = $this->typeImg[$this->imageInit['imageTypeFile']];
+                $funcCreate = 'imagecreatefrom' . $lImageExtension;
+                $lInitialImageDescriptor = $funcCreate($this->imageInit['imageFilePathAbs']);
+                $imageRes = '';
+                switch ($exifReadData['Orientation']) {
+                    // Поворот на 180 градусов
+                    case 3: {
+                        $imageRes = imagerotate($lInitialImageDescriptor, 180, 0);
+                        break;
+                    }
+                    // Поворот вправо на 90 градусов
+                    case 6: {
+                        $imageRes = imagerotate($lInitialImageDescriptor, -90, 0);
+                        break;
+                    }
+                    // Поворот влево на 90 градусов
+                    case 8: {
+                        $imageRes = imagerotate($lInitialImageDescriptor, 90, 0);
+                        break;
+                    }
+                }
+                if(!empty($imageRes)){
+                    $funcImg = 'image' . $lImageExtension;
+                    // echo '<pre>'; var_dump($funcImg); echo '</pre>';
+                    $result->status = $funcImg($imageRes, $this->imageInit['imageFilePathAbs'], 92);
+                    // $this->getImageInitData(imagePath: $this->imageInit['imageFilePath']);
+                    // echo '<pre>'; var_dump('END'); echo '</pre>';
+                }
             }
         } catch (\Exception $e) {
-            //
+            $result->error = true;
         } catch (\Throwable $th) {
-            //
+            $result->error = true;
         } finally {
             return $result;
         }
@@ -366,6 +357,13 @@ class CropImages{
             // $normalImgCopy = $this->setNormalizedImageData($imagePath);
             // if(!empty($normalImgCopy)) $imagePath = $normalImgCopy;
             if($this->getImageInitData($imagePath) !== true){ throw new \Exception('not init image'); }
+            // echo '<pre>'; var_dump($this->imageInit); echo '</pre>';
+
+            $normalResponse = $this->setNormalizedImageData();
+            if($normalResponse->status){ $this->getImageInitData($imagePath); }
+            // echo '<pre>'; var_dump($normalResponse->status); echo '</pre>';
+            // echo '<pre>'; var_dump($this->imageInit); echo '</pre>';
+
             if(empty($createWidth)){ throw new \Exception('no createWidth'); }
             // set config
             if(!empty($quality) && (int)$quality > 0) $this->quality = (int)$quality;
