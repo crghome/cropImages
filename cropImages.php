@@ -1,6 +1,6 @@
 <?php
 /* README
-VERSION 3.1.3
+VERSION 3.2.0
 
 require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/CropImages.php');
 $cropImages = new \CropImages();
@@ -137,6 +137,7 @@ class CropImages{
         $result = false;
         try{
             $imagePath = '/' . preg_replace('/^\//', '', $imagePath);
+            // $imagePath = preg_replace('/\ /', '_', $imagePath);
             $this->imageInit['imageFilePath'] = $imagePath;
             $this->imageInit['imageFilePathAbs'] = $this->documentRoot . $imagePath;
             if(!file_exists($this->imageInit['imageFilePathAbs'])){ throw new \Exception('not init file'); }
@@ -146,7 +147,7 @@ class CropImages{
             $this->imageInit['imageBaseName'] = $fileInfo['basename'];
             $this->imageInit['imageFileName'] = $fileInfo['filename'];
             $this->imageInit['extensionFile'] = $fileInfo['extension'];
-            $this->imageInit['dirFilePath'] = preg_replace('/(.+)\/.+$/', "$1", $this->imageInit['imageFilePath']);
+            $this->imageInit['dirFilePath'] = preg_replace('/\ /', '_', preg_replace('/(.+)\/.+$/', "$1", $this->imageInit['imageFilePath']));
             $this->imageInit['dirFilePathAbs'] = $fileInfo['dirname'];
             $this->imageInit['filemtime'] = filemtime($this->imageInit['imageFilePathAbs']);
             // echo '<pre>'; var_dump($this->imageInit); echo '</pre>';
