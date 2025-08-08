@@ -1,6 +1,6 @@
 <?php
 /* README
-VERSION 3.2.0
+VERSION 3.2.1
 
 require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/CropImages.php');
 $cropImages = new \CropImages();
@@ -23,7 +23,7 @@ $imgCache = $cropImages->cropImages(imagePath: $image, createWidth: 800, figure:
 
 $arrImgCache = $cropImages->cropImages(imagePath: $image, createWidth: ['4800', '1920', '1200', '800', '600']);
 */
-namespace App\Helpers;
+// namespace App\Helpers;
 
 class CropImages{
     private $documentRoot;
@@ -57,15 +57,15 @@ class CropImages{
     public function __construct(){
         $this->documentRoot = preg_replace('/\/$/', '', $_SERVER['DOCUMENT_ROOT']);
         $this->createDirectory($this->cacheBase);
-        // echo '<pre>'; var_dump($this->documentRoot); echo '</pre>';
     }
 
     /**
      * create path
-     * @param String $path
-     * @return String abs path
+     * @param string $path
+     * @return string absolute path
      */
-    private function createDirectory(String $path){
+    private function createDirectory(string $path): string
+    {
         $path = preg_match('/^\/.+/', $path) ? $path : '/' . $path;
         $directoryAbsolute = $this->documentRoot . $path;
         if(!file_exists($directoryAbsolute)){
@@ -77,36 +77,34 @@ class CropImages{
 
     /**
      * create path
-     * @param String $aNewImageFilePath
-     * @param Int $startX
-     * @param Int $startY
-     * @param Int $newWidth
-     * @param Int $newHeight
-     * @param Int $oldWidth
-     * @param Int $oldHeight
-     * @return String abs path
+     * @param string $aNewImageFilePath
+     * @param int $startX
+     * @param int $startY
+     * @param int $newWidth
+     * @param int $newHeight
+     * @param int $oldWidth
+     * @param int $oldHeight
+     * @return string abs path
      */
-    private function cropping(String $aNewImageFilePath, Int $startX, Int $startY, Int $newWidth, Int $newHeight, Int $oldWidth, Int $oldHeight){
+    private function cropping(string $aNewImageFilePath, int $startX, int $startY, int $newWidth, int $newHeight, int $oldWidth, int $oldHeight): string
+    {
         try {
             $lImageExtension = $this->typeImg[$this->imageInit['imageTypeFile']];
-            $funcCreate = 'imagecreatefrom' . $lImageExtension; 
+            $funcCreate = 'imagecreatefrom' . $lImageExtension;
+
             // Создаём дескриптор исходного изображения
             $lInitialImageDescriptor = $funcCreate($this->imageInit['imageFilePathAbs']);
+
             // Создаём дескриптор для выходного изображения 
-            // $img = imagecreatefrompng($dir . $name);
-            // imagepalettetotruecolor($img);
             $lNewImageDescriptor = imagecreatetruecolor($newWidth, $newHeight);
             imageAlphaBlending($lNewImageDescriptor, false);
             imageSaveAlpha($lNewImageDescriptor, true);
             imagecopyresampled($lNewImageDescriptor, $lInitialImageDescriptor, 0, 0, $startX, $startY, $newWidth, $newHeight, $oldWidth, $oldHeight);
+
             // сохраняем полученное изображение в указанный файл
             $funcImg = 'image' . ($this->originExt ? $lImageExtension : $this->defaultExt);
-            // if($this->imageInit['imageTypeFile'] == 2){
-            //     $funcImg($lNewImageDescriptor, $aNewImageFilePath, $this->quality);
-            // } else {
-            //     $funcImg($lNewImageDescriptor, $aNewImageFilePath);
-            // }
             $funcImg($lNewImageDescriptor, $aNewImageFilePath, $this->quality);
+
             imagedestroy($lNewImageDescriptor);
             imagedestroy($lInitialImageDescriptor);
         } catch (\Exception $e) {
@@ -119,21 +117,22 @@ class CropImages{
         return $aNewImageFilePath;
     }
 
-    /**
-     * @return String name
+    /** generate name file
+     * @return string name
      */
-    private function getNewNameFile(){
+    private function getNewNameFile(): string
+    {
         $fileName = $this->quality . '_' . $this->imageInit['filemtime'] . '_' . preg_replace('/[\ \.]+/', '', $this->imageInit['imageBaseName']) . '.';
         $fileName .= $this->originExt ? $this->imageInit['extensionFile'] : $this->defaultExt;
         return $fileName;
     }
 
-    /**
-     * initial old image data
-     * @param String $imagePat
-     * @return Bool
+    /** initial old image data
+     * @param string $imagePat
+     * @return bool
      */
-    private function getImageInitData(String $imagePath){
+    private function getImageInitData(string $imagePath): bool
+    {
         $result = false;
         try{
             $imagePath = '/' . preg_replace('/^\//', '', $imagePath);
@@ -162,10 +161,11 @@ class CropImages{
         }
     }
     
-    /**
-     * @return Bool
+    /** init new image
+     * @return bool
      */
-    private function initNewImage(){
+    private function initNewImage(): bool
+    {
         $result = false;
         try{
             $this->imageNew['dirRoot'] = $this->directoryCache;
@@ -181,15 +181,15 @@ class CropImages{
     
 
     /**
-     * @return Object
+     * @return object <bool status, bool error>
      */
-    private function setNormalizedImageData(){
+    private function setNormalizedImageData(): object
+    {
         $result = (object)['status' => false, 'error' => false];
         try{
-            // echo '<pre>'; var_dump($this->imageInit); echo '</pre>';
-            $exifReadData = exif_read_data($this->imageInit['imageFilePathAbs'], 'Orientation');
+            $exifReadData = $this->imageInit['imageTypeFile'] == 2 ? exif_read_data($this->imageInit['imageFilePathAbs']) : [];
             // echo '<pre>'; var_dump($exifReadData); echo '</pre>';
-            if($exifReadData && $exifReadData['Orientation']){
+            if($exifReadData && ($exifReadData['Orientation']??false)){
                 // echo '<pre>'; var_dump($exifReadData['Orientation']); echo '</pre>';
                 $lImageExtension = $this->typeImg[$this->imageInit['imageTypeFile']];
                 $funcCreate = 'imagecreatefrom' . $lImageExtension;
@@ -214,10 +214,7 @@ class CropImages{
                 }
                 if(!empty($imageRes)){
                     $funcImg = 'image' . $lImageExtension;
-                    // echo '<pre>'; var_dump($funcImg); echo '</pre>';
                     $result->status = $funcImg($imageRes, $this->imageInit['imageFilePathAbs'], 92);
-                    // $this->getImageInitData(imagePath: $this->imageInit['imageFilePath']);
-                    // echo '<pre>'; var_dump('END'); echo '</pre>';
                 }
             }
         } catch (\Exception $e) {
@@ -231,11 +228,12 @@ class CropImages{
     
     /**
      * crop image proportional or old height or width
-     * @param String $aNewImageFilePath
-     * @param Int $size
-     * @param String $figure set cover|height|width
+     * @param string $aNewImageFilePath
+     * @param int $size
+     * @param string $figure set cover|height|width
      */
-    private function cropWidthImage(String $aNewImageFilePath, Int $size, String $figure = 'cover'){
+    private function cropWidthImage(string $aNewImageFilePath, int $size, string $figure = 'cover'): void
+    {
         if($size > $this->imageInit['imageWidth']) $size = $this->imageInit['imageWidth'];
         // if($size <= $this->imageInit['imageWidth']){
             // initialize crop data
@@ -269,7 +267,13 @@ class CropImages{
         // }
     }
 
-    private function transitionHeightImage(String $nameImg, Int $newHeight){
+    /** generate transition image
+     * @param string $nameImg
+     * @param int $newHeight
+     * @return string
+     */
+    private function transitionHeightImage(string $nameImg, int $newHeight): string
+    {
         try{
             $pathDirTmp = $this->cacheBase . '/tmp/transition-height' . $this->imageInit['dirFilePath'];
             $pathDirRecTmp = $this->createDirectory($pathDirTmp);
@@ -307,7 +311,15 @@ class CropImages{
         }
     }
     
-    private function cropMinHeightImage(String $fullNameImg, String $pathImg, Int $newWidth, Int $minHeight){
+    /** create image of max height with set width
+     * @param string $fullNameImg
+     * @param string $pathImg
+     * @param int $newWidth
+     * @param int $minHeight
+     * @return string
+     */
+    private function cropMinHeightImage(string $fullNameImg, string $pathImg, int $newWidth, int $minHeight): string
+    {
         try{
             $pathImgRec = $this->imageNew['dirAbs'] . '/' . $fullNameImg;
             // echo '<pre>'; var_dump('pathImg ' . $pathImg); echo '</pre>';
@@ -341,28 +353,34 @@ class CropImages{
     }
     
 
-    /**
-     * get crop cache image
-     * @param String $imagePath original image
-     * @param String|Array $createWidth resolution cache
-     * @param Int $quality quality cache
-     * @param String $dirCache directory in cache
-     * @param String $figure if cropping
-     * @param Int $height if crop max height
-     * @param Bool $originExt is origin extension file
-     * @return Array|String
+    /** get crop cache image
+     * @param string $imagePath original image
+     * @param string|array $createWidth resolution cache
+     * @param int $quality quality cache
+     * @param string $dirCache directory in cache
+     * @param string $figure if cropping
+     * @param int $height if crop max height
+     * @param bool $originExt is origin extension file
+     * @return string|array
      */
-    public function cropImages(String $imagePath, String|Array $createWidth, Int $quality = 0, String $dirCache = '', String $imageName = '', String $figure = 'cover', Int $height = 0, Bool $originExt = false){
+    public function cropImages(
+        string $imagePath, 
+        string|array $createWidth, 
+        int $quality = 0, 
+        string $dirCache = '', 
+        string $imageName = '', 
+        string $figure = 'cover', 
+        int $height = 0, 
+        bool $originExt = false
+    ): string|array
+    {
         $result = array();
         try{
-            // $normalImgCopy = $this->setNormalizedImageData($imagePath);
-            // if(!empty($normalImgCopy)) $imagePath = $normalImgCopy;
             if($this->getImageInitData($imagePath) !== true){ throw new \Exception('not init image'); }
             // echo '<pre>'; var_dump($this->imageInit); echo '</pre>';
 
             $normalResponse = $this->setNormalizedImageData();
             if($normalResponse->status){ $this->getImageInitData($imagePath); }
-            // echo '<pre>'; var_dump($normalResponse->status); echo '</pre>';
             // echo '<pre>'; var_dump($this->imageInit); echo '</pre>';
 
             if(empty($createWidth)){ throw new \Exception('no createWidth'); }
