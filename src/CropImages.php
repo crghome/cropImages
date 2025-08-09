@@ -75,8 +75,17 @@ class CropImages{
         return $directoryAbsolute;
     }
 
-    /**
-     * create path
+    /** generate name file
+     * @return string name
+     */
+    private function getNewNameFile(): string
+    {
+        $fileName = $this->quality . '_' . $this->imageInit['filemtime'] . '_' . preg_replace('/[\ \.]+/', '', $this->imageInit['imageBaseName']) . '.';
+        $fileName .= $this->originExt ? $this->imageInit['extensionFile'] : $this->defaultExt;
+        return $fileName;
+    }
+
+    /** create image path absolute
      * @param string $aNewImageFilePath
      * @param int $startX
      * @param int $startY
@@ -115,16 +124,6 @@ class CropImages{
             return $aNewImageFilePath;
         }
         return $aNewImageFilePath;
-    }
-
-    /** generate name file
-     * @return string name
-     */
-    private function getNewNameFile(): string
-    {
-        $fileName = $this->quality . '_' . $this->imageInit['filemtime'] . '_' . preg_replace('/[\ \.]+/', '', $this->imageInit['imageBaseName']) . '.';
-        $fileName .= $this->originExt ? $this->imageInit['extensionFile'] : $this->defaultExt;
-        return $fileName;
     }
 
     /** initial old image data
@@ -180,7 +179,7 @@ class CropImages{
     }
     
 
-    /**
+    /** rotate only JPEG with saving
      * @return object <bool status, bool error>
      */
     private function setNormalizedImageData(): object
@@ -365,7 +364,7 @@ class CropImages{
      */
     public function cropImages(
         string $imagePath, 
-        string|array $createWidth, 
+        int|array $createWidth, 
         int $quality = 0, 
         string $dirCache = '', 
         string $imageName = '', 
@@ -376,20 +375,25 @@ class CropImages{
     {
         $result = array();
         try{
+            // validate
+            if(empty($createWidth)){ throw new \Exception('no createWidth'); }
+
+            // set $this->imageInit data from image
             if($this->getImageInitData($imagePath) !== true){ throw new \Exception('not init image'); }
             // echo '<pre>'; var_dump($this->imageInit); echo '</pre>';
 
+            // rotate image with saving and re-init image
             $normalResponse = $this->setNormalizedImageData();
             if($normalResponse->status){ $this->getImageInitData($imagePath); }
             // echo '<pre>'; var_dump($this->imageInit); echo '</pre>';
-
-            if(empty($createWidth)){ throw new \Exception('no createWidth'); }
+            
             // set config
             if(!empty($quality) && (int)$quality > 0) $this->quality = (int)$quality;
             $this->originExt = $originExt??false;
             $this->directoryCache = !empty($dirCache) 
                 ? $this->cacheBase . '/' . preg_replace('/^\//', '', $dirCache)
                 : $this->cacheBase . $this->imageInit['dirFilePath'];
+
             // set new image
             $this->initNewImage();
             $arrWidth = is_array($createWidth) ? $createWidth : array($createWidth);

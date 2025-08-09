@@ -1,0 +1,12 @@
+/node_modules
+/vendor
+
+composer.phar
+composer.lock
+
+.phpunit.result.cache
+
+/.idea
+/.vscode
+/.history
+
