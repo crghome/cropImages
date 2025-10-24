@@ -1,5 +1,5 @@
 # cropImages
-## V.3.2.1
+## V.3.3.0
 ---
 ```php
 require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/CropImages.php');
@@ -10,6 +10,7 @@ $imgCache = $cropImages->cropImages(
     string|array $createWidth,      // size new
     int $quality = 0,               // quality, default 90
     string $dirCache = '',          // directory cache, default by directory in cache original
+    string $aspectRatio = [],       // set aspect ratio [ <X axios>, Y <axios> ]
     string $figure = 'cover',       // set figure, default proportional by size width, height|width|cropMinHeight
     int $height = 0,                // set height if figure cropMinHeight
     bool $originExt = false         // if need original extension file, default webp format
@@ -20,6 +21,7 @@ $imgCache = $cropImages->cropImages(imagePath: $image, createWidth: 800);
 $imgCache = $cropImages->cropImages(imagePath: $image, createWidth: 800, figure: 'width');
 $imgCache = $cropImages->cropImages(imagePath: $image, createWidth: 800, figure: 'height');
 $imgCache = $cropImages->cropImages(imagePath: $image, createWidth: 800, figure: 'cropMinHeight', height: 600);
+$imgCache = $cropImages->cropImages(imagePath: $image, createWidth: 800, aspectRatio: [4, 3]);
 
 $arrImgCache = $cropImages->cropImages(imagePath: $image, createWidth: ['4800', '1920', '1200', '800', '600']);
 ```

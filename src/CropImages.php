@@ -1,6 +1,6 @@
 <?php
 /* README
-VERSION 3.2.1
+VERSION 3.3.0
 
 require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/CropImages.php');
 $cropImages = new \CropImages();
@@ -10,6 +10,7 @@ $imgCache = $cropImages->cropImages(
     String|Array $createWidth,      // size new
     Int $quality = 0,               // quality, default 90
     String $dirCache = '',          // directory cache, default by directory in cache original
+    string $aspectRatio = [],       // set aspect ratio [ <X axios>, Y <axios> ]
     String $figure = 'cover',       // set figure, default proportional by size width, height|width|cropMinHeight
     Int $height = 0,                // set height if figure cropMinHeight
     Bool $originExt = false         // if need original extension file, default webp format
@@ -32,9 +33,10 @@ class CropImages{
     private $quality = 92;
     private $originExt = false;
     private $defaultExt = 'webp';
-    private $typeImg = array(1 => 'gif', 2 => 'jpeg', 3 => 'png', 18 => 'webp');
-    // private $typeImgAll = array(0=>'UNKNOWN',1=>'GIF',2=>'JPEG',3=>'PNG',4=>'SWF',5=>'PSD',6=>'BMP',7=>'TIFF_II',8=>'TIFF_MM',9=>'JPC',10=>'JP2',11=>'JPX',12=>'JB2',13=>'SWC',14=>'IFF',15=>'WBMP',16=>'XBM',17=>'ICO',18=>'COUNT');
-    private $imageInit = array(
+    private $aspectRatioImage;
+    private $typeImg = [1 => 'gif', 2 => 'jpeg', 3 => 'png', 18 => 'webp'];
+    // private $typeImgAll = [0=>'UNKNOWN',1=>'GIF',2=>'JPEG',3=>'PNG',4=>'SWF',5=>'PSD',6=>'BMP',7=>'TIFF_II',8=>'TIFF_MM',9=>'JPC',10=>'JP2',11=>'JPX',12=>'JB2',13=>'SWC',14=>'IFF',15=>'WBMP',16=>'XBM',17=>'ICO',18=>'COUNT'];
+    private $imageInit = [
         'imageBaseName' => '',
         'imageFileName' => '',
         'imageFilePath' => '',
@@ -47,16 +49,17 @@ class CropImages{
         'attrFile' => '',
         'extensionFile' => '',
         'filemtime' => '',
-    );
-    private $imageNew = array(
+    ];
+    private $imageNew = [
         'dirRoot' => '',
         'dirAbs' => '',
         'name' => '',
-    );
+    ];
     
     public function __construct(){
         $this->documentRoot = preg_replace('/\/$/', '', $_SERVER['DOCUMENT_ROOT']);
         $this->createDirectory($this->cacheBase);
+        $this->aspectRatioImage = (object)[];
     }
 
     /**
@@ -157,6 +160,88 @@ class CropImages{
             return false;
         } finally {
             return $result;
+        }
+    }
+
+    /** create image of aspect ratio
+     * @param string $imagePat
+     * @return string
+     */
+    private function createImageAspectRatio(string $imagePath): string
+    {
+        try{
+            if(empty($this->aspectRatioImage)){ throw new \Exception('empty aspectRatioImage'); }
+            if(empty($this->aspectRatioImage->x)){ throw new \Exception('empty aspectRatioImage X'); }
+            if(empty($this->aspectRatioImage->y)){ throw new \Exception('empty aspectRatioImage Y'); }
+
+            $imagePath = '/' . preg_replace('/^\//', '', $imagePath);
+
+            $imageFilePathAbs = $this->documentRoot . $imagePath;
+            if(!file_exists($imageFilePathAbs)){ throw new \Exception('not init file'); }
+
+            list($imageWidth, $imageHeight, $imageTypeFileCode, $attrFile) = getimagesize($imageFilePathAbs);
+
+            $lImageExtension = $this->typeImg[$imageTypeFileCode] ?? '';
+            if(empty($lImageExtension)){ throw new \Exception('none type image'); }
+
+            $fileInfo = pathinfo($imageFilePathAbs);
+            $imageBaseName = $fileInfo['basename'];
+            $imageFileName = $fileInfo['filename'];
+            $extensionFile = $fileInfo['extension'];
+            $dirFilePath = preg_replace('/\ /', '_', preg_replace('/(.+)\/.+$/', "$1", $imagePath));
+            $dirFilePathAbs = $fileInfo['dirname'];
+            $filemtime = filemtime($imageFilePathAbs);
+
+            $nameImg = $imageFileName . '_' . $this->aspectRatioImage->x . '_' . $this->aspectRatioImage->y . '_' . $filemtime . '.' . $extensionFile;
+            $imageDirectory = $this->cacheBase . '/tmp/aspect-ratio' . $dirFilePath;
+            $this->createDirectory($imageDirectory);
+            $imagePath = $imageDirectory . '/' . $nameImg;
+            $pathImgAbsolute = $this->documentRoot . $imagePath;
+
+            if(file_exists($pathImgAbsolute)){ throw new \Exception('file isset'); }
+
+            $kSetAspectRatio = $this->aspectRatioImage->x / $this->aspectRatioImage->y;
+            $kImageAspectRatio = $imageWidth / $imageHeight;
+
+            $newWidth = $imageWidth;
+            $newHeight = $imageHeight;
+            $deltaX = $deltaY = 0;
+            $startX = $startY = 0;
+            if($kSetAspectRatio >= $kImageAspectRatio){
+                // обрезаем по высоте
+                $newHeight = floor($imageHeight / $kSetAspectRatio * $kImageAspectRatio);
+                $deltaY = $imageHeight - $newHeight;
+                $startY = floor( $deltaY / 2 );
+            } else {
+                // обрезаем по ширине
+                $newWidth = floor($imageWidth * $kSetAspectRatio / $kImageAspectRatio);
+                $deltaX = $imageWidth - $newWidth;
+                $startX = floor( $deltaX / 2 );
+            }
+
+            $funcCreate = 'imagecreatefrom' . $lImageExtension;
+
+            // Создаём дескриптор исходного изображения
+            $lInitialImageDescriptor = $funcCreate($imageFilePathAbs);
+
+            // Создаём дескриптор для выходного изображения 
+            $lNewImageDescriptor = imagecreatetruecolor($newWidth, $newHeight);
+            imageAlphaBlending($lNewImageDescriptor, false);
+            imageSaveAlpha($lNewImageDescriptor, true);
+            imagecopyresampled($lNewImageDescriptor, $lInitialImageDescriptor, 0, 0, $startX, $startY, $newWidth, $newHeight, ($imageWidth - $deltaX), ($imageHeight - $deltaY));
+
+            // сохраняем полученное изображение в указанный файл
+            $funcImg = 'image' . $lImageExtension;
+            $funcImg($lNewImageDescriptor, $pathImgAbsolute, 100);
+
+            imagedestroy($lNewImageDescriptor);
+            imagedestroy($lInitialImageDescriptor);
+
+            // $this->cropping(aNewImageFilePath: $pathImgAbsolute, startX: $startX, startY: $startY, newWidth: $newWidth, newHeight: $newHeight, oldWidth: $imageWidth, oldHeight: $imageHeight);
+        } catch (\Exception | \Throwable $e) {
+            return $imagePath;
+        } finally {
+            return $imagePath;
         }
     }
     
@@ -350,6 +435,18 @@ class CropImages{
             return $pathImg;
         }
     }
+
+    public function prepareAspectRatio(array $aspectRatio): void
+    {
+        if(empty($aspectRatio)){ return; }
+        if(empty($aspectRatio[0]) || (int)($aspectRatio[0] ?? 0) <= 0){ return; }
+        if(empty($aspectRatio[1]) || (int)($aspectRatio[1] ?? 0) <= 0){ return; }
+
+        $this->aspectRatioImage = (object)[
+            'x' => (int)$aspectRatio[0],
+            'y' => (int)$aspectRatio[1],
+        ];
+    }
     
 
     /** get crop cache image
@@ -369,6 +466,7 @@ class CropImages{
         string $dirCache = '', 
         string $imageName = '', 
         string $figure = 'cover', 
+        array $aspectRatio = [], 
         int $height = 0, 
         bool $originExt = false
     ): string|array
@@ -377,6 +475,19 @@ class CropImages{
         try{
             // validate
             if(empty($createWidth)){ throw new \Exception('no createWidth'); }
+            
+            if(!empty($aspectRatio)){
+                $this->prepareAspectRatio(aspectRatio: $aspectRatio);
+            }
+            if(!empty($aspectRatio)){
+                $arrListPath = explode('/', preg_replace('/^\//', '', $imagePath));
+                $arrListPath = array_slice($arrListPath, 0, count($arrListPath)-1);
+                $dirCache = !empty($dirCache) 
+                    ? $dirCache
+                    : '/' . implode('/', $arrListPath);
+                // echo '<pre>'; var_dump($imagePath, $dirCache); echo '</pre>';
+                $imagePath = $this->createImageAspectRatio(imagePath: $imagePath);
+            }
 
             // set $this->imageInit data from image
             if($this->getImageInitData($imagePath) !== true){ throw new \Exception('not init image'); }
@@ -386,7 +497,7 @@ class CropImages{
             $normalResponse = $this->setNormalizedImageData();
             if($normalResponse->status){ $this->getImageInitData($imagePath); }
             // echo '<pre>'; var_dump($this->imageInit); echo '</pre>';
-            
+
             // set config
             if(!empty($quality) && (int)$quality > 0) $this->quality = (int)$quality;
             $this->originExt = $originExt??false;
