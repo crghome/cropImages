@@ -1,6 +1,6 @@
 <?php
 /* README
-VERSION 3.3.0
+VERSION 3.3.1
 
 require_once($_SERVER['DOCUMENT_ROOT'] . '/includes/CropImages.php');
 $cropImages = new \CropImages();
@@ -237,7 +237,7 @@ class CropImages{
             imagedestroy($lNewImageDescriptor);
             imagedestroy($lInitialImageDescriptor);
 
-            // $this->cropping(aNewImageFilePath: $pathImgAbsolute, startX: $startX, startY: $startY, newWidth: $newWidth, newHeight: $newHeight, oldWidth: $imageWidth, oldHeight: $imageHeight);
+            // $this->cropping(aNewImageFilePath: $pathImgAbsolute, startX: $startX, startY: $startY, newWidth: $newWidth, newHeight: $newHeight, oldWidth: ($imageWidth - $deltaX), oldHeight: ($imageHeight - $deltaY));
         } catch (\Exception | \Throwable $e) {
             return $imagePath;
         } finally {
@@ -420,7 +420,9 @@ class CropImages{
                     $cropImages = new CropImages();
                     $tmpPathImage = file_exists($tmpImageAbs) ? $tmpImage : $pathImgRec;
                     // echo '<pre>'; var_dump('pathImgRec ' . $pathImgRec); echo '</pre>';
-                    $pathImg = $cropImages->cropImages(imagePath: $tmpPathImage, dirCache: $this->imageInit['dirFilePath'], imageName: $fullNameImg, createWidth: $newWidth, figure: 'height', quality: $this->quality, originExt: $this->originExt);
+                    // $pathImg = $cropImages->cropImages(imagePath: $tmpPathImage, dirCache: $this->imageInit['dirFilePath'], imageName: $fullNameImg, createWidth: $newWidth, figure: 'height', quality: $this->quality, originExt: $this->originExt);
+                    $pathImg = $cropImages->cropImages(imagePath: $tmpPathImage, dirCache: ltrim($this->directoryCache, '/'.$this->cacheBase), imageName: $fullNameImg, createWidth: $newWidth, figure: 'height', quality: $this->quality, originExt: $this->originExt);
+                    // echo '<pre>'; var_dump($this->directoryCache, $this->imageInit['dirFilePath']); echo '</pre>';
                     // echo '<pre>'; var_dump($pathImg); echo '</pre>';
                 // } else {
                 //     // echo '<pre>'; var_dump('copy crop-min ' . $pathImgRec); echo '</pre>';
@@ -520,6 +522,7 @@ class CropImages{
                     // echo '<pre>'; var_dump($nameImg); echo '</pre>';
                     if(!file_exists($pathImgRec)) $this->cropMinHeightImage(fullNameImg: $nameImg, pathImg: $pathImg, newWidth: (int)$vWidth, minHeight: (int)$height);
                     $result[$vWidth] = $pathImg;
+                    // echo '<pre>'; var_dump($result); echo '</pre>';
                 } else {
                     $nameImg = empty($imageName) ? $vWidth . '_' . $figure . '_' . $this->imageNew['name'] : $imageName;
                     $pathImg = $this->imageNew['dirRoot'] . '/' . $nameImg;
